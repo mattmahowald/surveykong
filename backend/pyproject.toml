@@ -1,0 +1,25 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Matt Mahowald",email = "mahowaldmatt@gmail.com"}
+]
+readme = "README.md"
+requires-python = "3.13.0"
+dependencies = [
+    "openai==1.10.0",
+    "poetry==1.8.4",
+    "python-dotenv==1.0.1"
+]
+
+[tool.poetry]
+packages = [
+    { include = "agents" },
+    { include = "main.py" },
+    { include = "__init__.py" }
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
