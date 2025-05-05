@@ -6,9 +6,16 @@ import os
 load_dotenv()
 
 
-class Agent:
+class Artifact:
     def __init__(self):
         pass
 
-    def generate_response(self, message):
+
+class Agent:
+    SYSTEM_PROMPT = "NOT IMPLEMENTED"
+
+    def __init__(self):
+        pass
+
+    def run(self, *args) -> Artifact:
         pass
