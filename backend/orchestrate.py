@@ -6,16 +6,17 @@ from agents.analysis import AnalysisReport, AnalysisAgent
 
 
 class SurveyOrchestrator:
-    def __init__(self) -> None:
-        self.spec_agent = SpecAgent()
-        self.survey_agent = SurveyAgent()
-        self.cohort_agent = CohortAgent()
-        self.outbound_agent = OutboundAgent()
-        self.analysis_agent = AnalysisAgent()
+    def __init__(self, client, async_client) -> None:
+        self.spec_agent = SpecAgent(client=client, async_client=async_client)
+        # self.survey_agent = SurveyAgent(client=client, async_client=async_client)
+        # self.cohort_agent = CohortAgent(client=client, async_client=async_client)
+        # self.outbound_agent = OutboundAgent(client=client, async_client=async_client)
+        # self.analysis_agent = AnalysisAgent(client=client, async_client=async_client)
 
     def orchestrate(self, survey_request: str) -> AnalysisReport:
         spec: Spec = self.spec_agent.run(survey_request)
-        survey: Survey = self.survey_agent.run(spec)
-        cohort: Cohort = self.cohort_agent.run(survey)
-        results: OutboundResults = self.outbound_agent.run(survey, cohort)
-        return self.analysis_agent.run(results)
+        return spec
+        # survey: Survey = self.survey_agent.run(spec)
+        # cohort: Cohort = self.cohort_agent.run(survey)
+        # results: OutboundResults = self.outbound_agent.run(survey, cohort)
+        # return self.analysis_agent.run(results)
