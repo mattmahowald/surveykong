@@ -4,7 +4,7 @@ from openai import OpenAI, AsyncOpenAI
 import os
 
 
-def main():
+async def main():
     # Initialize OpenAI clients
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     async_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -22,7 +22,7 @@ def main():
     orchestrator = SurveyOrchestrator(client=client, async_client=async_client)
 
     # Run just the spec agent
-    spec = orchestrator.spec_agent.run(survey_request)
+    spec = await orchestrator.spec_agent.arun(survey_request)
 
     # Print the spec in a nicely formatted way
     print("\nSurvey Specification:")
