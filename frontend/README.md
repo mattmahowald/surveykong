@@ -1,54 +1,47 @@
-# React + TypeScript + Vite
+# SurveyKong Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive web app for orchestrating the end-to-end survey research workflow, built with React and TypeScript. The frontend guides users through survey design, cohort selection, distribution, and analysis, integrating with the SurveyKong backend (FastAPI).
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Interactive, step-based workflow UI
+- Research question input and survey spec generation
+- Responsive design for desktop and mobile
+- Modular, extensible React components
+- Integration with backend API for survey automation
 
-## Expanding the ESLint configuration
+## Workflow Steps
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. **Framing:** Enter a research question to generate a survey spec
+2. **Survey Design:** Review and refine generated survey questions
+3. **Cohort Selection:** Define or review the target audience
+4. **Distribution:** Distribute the survey and collect responses
+5. **Analysis:** Analyze results and view insights
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Quickstart
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. Install dependencies:
+   ```sh
+   npm install
+   ```
+2. Start the development server:
+   ```sh
+   npm run dev
+   ```
+3. Open [http://localhost:5173](http://localhost:5173) in your browser.
+4. Ensure the backend API is running at [http://localhost:8000](http://localhost:8000).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Development Guidance
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+- All UI is built with functional React components and TypeScript
+- State is managed with React hooks
+- Styling uses inline styles for rapid prototyping
+- See `context.md` for architecture, conventions, and contribution guidelines
+
+## Documentation
+
+- [context.md](./context.md) — Developer context and best practices
+
+---
+
+For backend details, see `../backend/context.md`.
