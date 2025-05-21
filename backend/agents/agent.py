@@ -16,6 +16,7 @@ import logging
 import time
 from datetime import datetime
 from pydantic import BaseModel, Field
+from models.artifact import Artifact
 
 T = TypeVar("T")
 OutputType = TypeVar("OutputType", bound=BaseModel)

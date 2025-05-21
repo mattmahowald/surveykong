@@ -1,5 +1,6 @@
 from agents.agent import Agent, Artifact
 from agents.survey import Survey
+from models.artifact import Artifact
 
 
 class Cohort(Artifact):

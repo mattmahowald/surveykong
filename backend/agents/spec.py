@@ -1,32 +1,14 @@
 from typing import Dict, Any, Optional, List
-from agents.agent import Agent, Artifact
+from agents.agent import Agent
 from pydantic import BaseModel, Field
 import json
 import asyncio
-
-
-class Question(BaseModel):
-    """Model for a survey question."""
-
-    text: str
-    type: str = Field(..., pattern="^(multiple_choice|text|rating|boolean)$")
-    options: Optional[List[str]] = None
-    required: bool = True
-
-
-class SurveySpec(BaseModel):
-    """Data model for survey specification."""
-
-    title: str
-    description: str
-    questions: List[Question]
-    target_audience: str
-    estimated_time: str
-    required_responses: int
+from models.artifact import Artifact
+from models.survey import Question, SurveySpec
 
 
 class Spec(Artifact[SurveySpec]):
-    """Artifact representing a survey specification."""
+    """Artifact representing a survey specification.\n    \n    This class is now fully compatible with the DB layer via db.create_survey_spec.\n"""
 
     def __init__(self, data: Optional[SurveySpec] = None):
         super().__init__(data=data)
@@ -42,6 +24,7 @@ You should consider:
     3. Appropriate question types and flow
     4. Estimated completion time
     5. Required number of responses
+
 Provide clear, actionable specifications that can be used to create an effective survey.
 
 Please provide your response in JSON format with the following structure:

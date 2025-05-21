@@ -10,7 +10,8 @@ requires-python = "3.13.0"
 dependencies = [
     "openai (>=1.77.0,<2.0.0)",
     "poetry==1.8.4",
-    "python-dotenv==1.0.1"
+    "python-dotenv==1.0.1",
+    "psycopg2 (>=2.9.10,<3.0.0)"
 ]
 
 [tool.poetry]

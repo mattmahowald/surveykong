@@ -1,4 +1,5 @@
-from agents.agent import Agent, Artifact
+from agents.agent import Agent
+from models.artifact import Artifact
 
 
 class Survey(Artifact):

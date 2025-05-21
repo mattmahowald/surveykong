@@ -1,7 +1,10 @@
+from models.survey import SurveySpec
 from orchestrate import SurveyOrchestrator
 import json
 from openai import OpenAI, AsyncOpenAI
 import os
+
+from db import SurveyKongDB
 
 
 async def main():
@@ -52,6 +55,40 @@ async def main():
         print(f"Tool Calls: {metrics['tool_calls']}")
         print(f"Tokens Used: {metrics['tokens_used']}")
         print(f"Error Count: {metrics['error_count']}")
+
+    try:
+        db = SurveyKongDB()
+        print("Connection successful!")
+
+        # Create a project
+        project = db.create_project(
+            {"title": "Demo Project", "description": "Test", "status": "draft"}
+        )
+        print("Inserted project:", project)
+
+        # Fetch all projects
+        projects = db.get_projects()
+        print("All projects:", projects)
+
+        if isinstance(spec, Spec):
+            db_spec = db.create_survey_spec(project["id"], spec)
+        else:
+            db_spec = db.create_survey_spec(
+                project["id"],
+                SurveySpec(
+                    **{"questions": [], "target_audience": "US adults", "version": 1}
+                ),
+            )
+        print("Inserted survey spec:", db_spec)
+
+        # Fetch all survey specs for the project
+        specs = db.get_survey_specs_for_project(project["id"])
+        print("Survey specs for project:", specs)
+
+        db.close()
+        print("Connection closed.")
+    except Exception as e:
+        print(f"Failed to connect or execute query: {e}")
 
 
 if __name__ == "__main__":

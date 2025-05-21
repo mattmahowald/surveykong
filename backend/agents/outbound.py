@@ -1,6 +1,7 @@
 from agents.agent import Agent, Artifact
 from agents.cohort import Cohort
 from agents.survey import Survey
+from models.artifact import Artifact
 
 
 class OutboundResults(Artifact):
