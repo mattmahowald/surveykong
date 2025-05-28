@@ -116,3 +116,13 @@ The project is in active development with the following status:
 3. Add comprehensive testing
 4. Enhance error handling and recovery
 5. Add more sophisticated metrics and monitoring
+
+## Developer Utilities
+
+A Makefile is provided for common development tasks:
+
+- `make install` — Install dependencies with Poetry
+- `make run` — Run the CLI main script
+- `make serve` — Serve the FastAPI API with uvicorn
+- `make test` — Run tests (currently a placeholder)
+- `make clean` — Remove Python and pytest caches

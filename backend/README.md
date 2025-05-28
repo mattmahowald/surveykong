@@ -82,6 +82,27 @@ OPENAI_API_KEY=your_api_key_here
 
 ## Usage
 
+You can use the Makefile for common development tasks:
+
+```sh
+# Install dependencies
+make install
+
+# Run the main script (CLI mode)
+make run
+
+# Serve the API (FastAPI/uvicorn)
+make serve
+
+# Run tests (placeholder)
+make test
+
+# Clean up caches and bytecode
+make clean
+```
+
+---
+
 Run the main script:
 
 ```bash
