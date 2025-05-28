@@ -18,6 +18,19 @@ interface SurveySpec {
   [key: string]: unknown; // for any extra fields
 }
 
+// Project type for API integration
+interface Project {
+  id: string;
+  created_at: string;
+  data: {
+    title: string;
+    description: string;
+    status?: string;
+    workflow_stage?: string;
+    [key: string]: unknown;
+  };
+}
+
 const WORKFLOW_STEPS = [
   { key: "framing", label: "Framing", description: "Define research question" },
   {
@@ -180,6 +193,256 @@ function WorkflowPane({
   );
 }
 
+// Sidebar for project list and creation
+function ProjectSidebar({
+  projects,
+  selectedProjectId,
+  onSelect,
+  onCreate,
+  isMobile,
+}: {
+  projects: Project[];
+  selectedProjectId: string | null;
+  onSelect: (id: string) => void;
+  onCreate: (title: string, description: string) => Promise<void>;
+  isMobile: boolean;
+}) {
+  const [showModal, setShowModal] = React.useState(false);
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [creating, setCreating] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    setError(null);
+    try {
+      await onCreate(title, description);
+      setShowModal(false);
+      setTitle("");
+      setDescription("");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create project");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <aside
+      style={{
+        background: "#fff",
+        borderRadius: 12,
+        boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+        padding: isMobile ? 10 : 20,
+        margin: isMobile ? "0 0 12px 0" : "0 32px 0 0",
+        width: isMobile ? "100%" : 260,
+        minWidth: isMobile ? undefined : 200,
+        maxHeight: isMobile ? 180 : "calc(100vh - 48px)",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        boxSizing: "border-box",
+      }}
+      aria-label="Project list"
+    >
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+        <span
+          style={{ fontWeight: 700, fontSize: isMobile ? 16 : 20, flex: 1 }}
+        >
+          Projects
+        </span>
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            background: "#1a2233",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            padding: isMobile ? "4px 10px" : "6px 14px",
+            fontSize: isMobile ? 13 : 15,
+            fontWeight: 600,
+            cursor: "pointer",
+            marginLeft: 8,
+          }}
+          aria-label="Create new project"
+        >
+          + Create
+        </button>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {projects.length === 0 ? (
+          <div
+            style={{
+              color: "#888",
+              fontSize: isMobile ? 14 : 15,
+              textAlign: "center",
+              marginTop: 20,
+            }}
+          >
+            No projects yet.
+          </div>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {projects.map((p) => (
+              <li key={p.id}>
+                <button
+                  onClick={() => onSelect(p.id)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background:
+                      p.id === selectedProjectId ? "#1a2233" : "#f6f8fa",
+                    color: p.id === selectedProjectId ? "#fff" : "#1a2233",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: isMobile ? "7px 8px" : "10px 12px",
+                    marginBottom: 6,
+                    fontWeight: p.id === selectedProjectId ? 700 : 500,
+                    fontSize: isMobile ? 14 : 15,
+                    cursor: "pointer",
+                    outline:
+                      p.id === selectedProjectId
+                        ? "2px solid #1a2233"
+                        : undefined,
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                  aria-current={p.id === selectedProjectId ? "true" : undefined}
+                >
+                  <div style={{ fontWeight: 600 }}>
+                    {p.data.title || "Untitled"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: isMobile ? 12 : 13,
+                      color: p.id === selectedProjectId ? "#e0e0e0" : "#666",
+                    }}
+                  >
+                    {p.data.description || "No description"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: isMobile ? 11 : 12,
+                      color: p.id === selectedProjectId ? "#c0c0c0" : "#aaa",
+                    }}
+                  >
+                    {new Date(p.created_at).toLocaleString()}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleCreate}
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              boxShadow: "0 4px 24px rgba(0,0,0,0.13)",
+              padding: 24,
+              minWidth: 280,
+              maxWidth: 340,
+              width: "90vw",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>
+              Create Project
+            </div>
+            <input
+              type="text"
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              style={{
+                fontSize: 15,
+                padding: "7px 10px",
+                borderRadius: 6,
+                border: "1px solid #d0d7de",
+                marginBottom: 4,
+              }}
+              autoFocus
+            />
+            <textarea
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              style={{
+                fontSize: 14,
+                padding: "7px 10px",
+                borderRadius: 6,
+                border: "1px solid #d0d7de",
+                resize: "vertical",
+                marginBottom: 4,
+              }}
+            />
+            {error && (
+              <div style={{ color: "#b00020", fontSize: 13 }}>{error}</div>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                style={{
+                  flex: 1,
+                  background: "#eee",
+                  color: "#333",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 0",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={creating}
+                style={{
+                  flex: 1,
+                  background: "#1a2233",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 0",
+                  fontWeight: 600,
+                  cursor: creating ? "not-allowed" : "pointer",
+                }}
+              >
+                {creating ? "Creating..." : "Create"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </aside>
+  );
+}
+
 function App() {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState<SurveySpec | null>(null);
@@ -187,6 +450,12 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<WorkflowStep>("framing");
   const isMobile = useResponsive();
+
+  // Project state
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    null
+  );
 
   // Reset state if user goes back to framing
   React.useEffect(() => {
@@ -196,6 +465,48 @@ function App() {
       setLoading(false);
     }
   }, [currentStep]);
+
+  // Fetch projects on mount
+  React.useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/projects");
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        let data: Project[] = await res.json();
+        // Sort by created_at descending
+        data = data.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setProjects(data);
+        // Auto-select most recent if none selected
+        if (!selectedProjectId && data.length > 0)
+          setSelectedProjectId(data[0].id);
+      } catch {
+        // No-op for now; could add error UI if desired
+      }
+    };
+    fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Create project handler
+  const handleCreateProject = async (title: string, description: string) => {
+    const res = await fetch("http://localhost:8000/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        description,
+        status: "draft",
+        workflow_stage: "framing",
+      }),
+    });
+    if (!res.ok) throw new Error(`Error: ${res.status}`);
+    const newProject: Project = await res.json();
+    setProjects((prev) => [newProject, ...prev]);
+    setSelectedProjectId(newProject.id);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -379,7 +690,24 @@ function App() {
           boxSizing: "border-box",
         }}
       >
+        {/* Project Sidebar */}
+        <div
+          style={{
+            width: isMobile ? "100%" : 260,
+            minWidth: isMobile ? undefined : 200,
+          }}
+        >
+          <ProjectSidebar
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onSelect={setSelectedProjectId}
+            onCreate={handleCreateProject}
+            isMobile={isMobile}
+          />
+        </div>
+        {/* Main Content */}
         <div style={{ flex: 1, minWidth: 0 }}>{mainContent}</div>
+        {/* Workflow Pane */}
         <div
           style={{
             width: isMobile ? "100%" : 240,
