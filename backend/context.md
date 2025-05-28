@@ -1,128 +1,176 @@
-# SurveyKong Context
+# SurveyKong Backend - Project Context
 
 ## Project Overview
+**SurveyKong**: AI-powered survey automation platform that orchestrates the entire survey lifecycle from research question to data analysis.
 
-SurveyKong is a Python-based backend system for automating the survey research process, from research question to data analysis. The system uses an agent-based architecture to handle different aspects of the survey workflow.
+## Tech Stack (STRICT REQUIREMENTS)
 
-## Architecture
+### Core Dependencies
+- **Python**: 3.11+ (tested on 3.13.0)
+- **Pydantic**: v2.10+ (NOT v1) - Use `model_dump()`, `model_validate()`, NOT `.dict()`, `.parse_obj()`
+- **Supabase**: v2.10+ via `supabase` package (NOT `postgrest-py` which only supports Pydantic v1)
+- **OpenAI**: v1.77+ for agent intelligence
+- **FastAPI**: v0.115+ for API endpoints
+- **PostgreSQL**: via `psycopg2-binary` (NOT `psycopg2`)
 
-### Core Components
+### Package Manager
+- **Poetry**: Primary package manager
+- **pyproject.toml**: Source of truth for dependencies
 
-1. **Base Agent System**
-
-   - Generic `Agent` class with robust error handling and metrics tracking
-   - Circuit breaker pattern for API call management
-   - Support for both synchronous and asynchronous operations
-   - Structured output handling with Pydantic models
-   - Tool system for extensible agent capabilities
-
-2. **Agent Types**
-
-   - `SpecAgent`: Converts research questions into structured specifications
-   - `SurveyAgent`: Creates survey structure and questions
-   - `CohortAgent`: Determines target audience
-   - `OutboundAgent`: Handles survey distribution
-   - `AnalysisAgent`: Processes and analyzes results
-
-3. **Data Models**
-   - `Question`: Represents survey questions with types (multiple_choice, text, rating, boolean)
-   - `SurveySpec`: Defines survey structure and requirements
-   - `Artifact`: Base class for all agent outputs with metadata and metrics
-
-### Key Features
-
-1. **Error Handling & Resilience**
-
-   - Circuit breaker pattern for API calls
-   - Retry logic with exponential backoff
-   - Comprehensive error tracking and metrics
-
-2. **Metrics & Monitoring**
-
-   - API call tracking
-   - Token usage monitoring
-   - Execution time measurement
-   - Error rate tracking
-
-3. **Structured Output**
-   - JSON schema validation
-   - Pydantic model integration
-   - Type-safe data handling
-
-## Technical Stack
-
-### Dependencies
-
-- Python 3.13.0
-- OpenAI API (>=1.77.0)
-- Poetry (1.8.4) for dependency management
-- python-dotenv (1.0.1) for environment configuration
-
-### Project Structure
-
+## Project Structure
 ```
 backend/
-├── agents/
-│   ├── agent.py          # Base agent implementation
-│   ├── spec.py           # Survey specification agent
-│   ├── survey.py         # Survey creation agent
-│   ├── cohort.py         # Audience selection agent
-│   ├── outbound.py       # Distribution agent
-│   └── analysis.py       # Results analysis agent
-├── main.py               # Application entry point
-├── orchestrate.py        # Workflow orchestration
-└── pyproject.toml        # Project configuration
+├── agents/          # AI agents for each workflow stage
+│   ├── agent.py     # Base agent class
+│   ├── spec.py      # Research spec creation
+│   ├── survey.py    # Survey question generation
+│   ├── cohort.py    # Audience selection
+│   ├── outbound.py  # Distribution handling
+│   └── analysis.py  # Results analysis
+├── models/          # Pydantic v2 data models
+│   ├── artifact.py  # Generic artifact container
+│   └── survey.py    # Survey-specific models
+├── orchestrate.py   # Main workflow orchestrator
+├── supabase_service.py  # Database operations
+├── api.py          # FastAPI endpoints
+├── main.py         # CLI entry point
+└── tests/          # Test suite
 ```
 
-## Recent Updates
+## Database Schema (Supabase/PostgreSQL)
+```sql
+-- Projects table
+CREATE TABLE projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-### Agent System Enhancements
+-- Survey specs table
+CREATE TABLE survey_specs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
 
-1. Implemented robust base Agent class with:
+## Critical Setup Instructions
 
-   - Async/sync operation support
-   - Circuit breaker pattern
-   - Metrics tracking
-   - Tool system
-   - Structured output handling
+### 1. Environment Variables (.env)
+```bash
+OPENAI_API_KEY=sk-...
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_KEY=eyJhbGc...
+```
 
-2. Enhanced SpecAgent with:
-   - JSON schema validation
-   - Structured survey specification output
-   - Error handling and recovery
-   - Metrics tracking
+### 2. Installation
+```bash
+# ONLY use this method:
+cd backend
+poetry install
+poetry shell
+```
 
-### API Integration
+### 3. Running the Application
+```bash
+# CLI mode
+python main.py
 
-1. Updated OpenAI integration:
-   - Upgraded to OpenAI API v1.77.0
-   - Added structured output support
-   - Implemented proper error handling
-   - Added token usage tracking
+# API server
+uvicorn api:app --reload --port 8000
 
-### Development Status
+# Run tests (unit only)
+pytest -m "not integration"
+```
 
-The project is in active development with the following status:
+## Code Standards
 
-- ✅ Base agent system implemented
-- ✅ SpecAgent fully functional
-- 🚧 Other agents in development
-- 🚧 Full orchestration pending
+### Pydantic v2 Usage
+```python
+# CORRECT (v2)
+model.model_dump()          # NOT .dict()
+model.model_dump_json()     # NOT .json()
+Model.model_validate(data)  # NOT .parse_obj()
+Model.model_validate_json() # NOT .parse_raw()
 
-## Next Steps
+# Field validation
+@field_validator('email')   # NOT @validator
+@model_validator(mode='after')  # NOT @root_validator
+```
 
-1. Complete implementation of remaining agents
-2. Implement full orchestration workflow
-3. Add comprehensive testing
-4. Enhance error handling and recovery
-5. Add more sophisticated metrics and monitoring
+### Supabase Client Usage
+```python
+# CORRECT
+from supabase import create_client
+client = create_client(url, key)
+result = client.table("projects").insert(data).execute()
 
-## Developer Utilities
+# WRONG (old postgrest-py)
+from postgrest import PostgrestClient
+```
 
-A Makefile is provided for common development tasks:
+### Async Patterns
+```python
+# Supabase v2 is sync by default
+# For async, wrap in asyncio.to_thread() or use postgrest directly
+async def create_project_async(data):
+    def _create():
+        return client.table("projects").insert(data).execute()
+    return await asyncio.to_thread(_create)
+```
 
-- `make install` — Install dependencies with Poetry
-- `make run` — Run the CLI main script
-- `make serve` — Serve the FastAPI API with uvicorn
-- `make test` — Run tests (currently a placeholder)
-- `make clean` — Remove Python and pytest caches
+## Agent Architecture
+
+### Base Agent Pattern
+- Each agent inherits from `BaseAgent`
+- Implements `run()` (sync) and `arun()` (async) methods
+- Returns `Artifact[T]` with typed data payload
+- Uses OpenAI for intelligence
+
+### Agent Responsibilities
+1. **SpecAgent**: Research question → Structured specification
+2. **SurveyAgent**: Specification → Survey questions
+3. **CohortAgent**: Requirements → Audience targeting
+4. **OutboundAgent**: Survey → Distribution
+5. **AnalysisAgent**: Responses → Insights
+
+### Orchestrator Flow
+```python
+orchestrator = SurveyOrchestrator(client, async_client)
+spec = await orchestrator.run_research_spec(question)
+survey = await orchestrator.run_survey_creation(spec)
+# ... continues through pipeline
+```
+
+## Testing Strategy
+- **Unit tests**: Models, business logic (no external deps)
+- **Integration tests**: Marked with `@pytest.mark.integration`
+- Run: `pytest -m "not integration"` for fast local testing
+
+## Development Workflow
+1. Always use Poetry virtual environment
+2. Format: `black .` and `isort .`
+3. Type check: `mypy .`
+4. Test before commit: `pytest -m "not integration"`
+
+## Common Issues & Solutions
+
+### "pydantic v1/v2 conflict"
+- NEVER install `postgrest-py` 
+- ONLY use `supabase>=2.10.0`
+
+### "Import errors"
+- Ensure you're in Poetry shell: `poetry shell`
+- Check Python version: `python --version` (must be 3.11+)
+
+### "Supabase connection failed"
+- Verify `.env` has correct SUPABASE_URL and SUPABASE_KEY
+- Check Supabase dashboard for table creation
+
+## Next Development Steps
+1. Implement concrete agent logic (currently stubs)
+2. Add Supabase RLS policies for multi-tenant support
+3. Implement survey distribution integrations (MTurk, Prolific)
+4. Build analysis visualization components
+5. Add comprehensive error handling and logging

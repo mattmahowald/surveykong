@@ -5,7 +5,7 @@ run:
 	poetry run python main.py
 
 test:
-	echo "No tests implemented yet."
+	poetry run pytest
 
 clean:
 	rm -rf __pycache__ .pytest_cache
