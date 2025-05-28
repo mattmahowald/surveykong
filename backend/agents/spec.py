@@ -15,7 +15,7 @@ class Spec(Artifact[SurveySpec]):
         self.metadata["type"] = "survey_specification"
 
 
-SPEC_AGENT_PROMPT = """
+SPEC_AGENT_PROMPT_CREATE = """
 You are a survey specification expert. Your role is to analyze survey requests \
 and create detailed specifications that will guide the survey creation process. \
 You should consider:
@@ -26,6 +26,50 @@ You should consider:
     5. Target number of responses needed
 
 Provide clear, actionable specifications that can be used to create an effective survey.
+
+Please provide your response in JSON format with the following structure:
+{
+    "title": "string",
+    "description": "string",
+    "questions": [
+        {
+            "text": "string",
+            "type": "multiple_choice|text|rating|boolean",
+            "options": ["string"] (optional),
+            "required": boolean
+        }
+    ],
+    "target_audience": "string",
+    "targeted_completion_time": "string",
+    "targeted_number_of_responses": integer,
+    "hypothesis_tested": ["string", "string", ...] // List of hypotheses being tested
+}
+"""
+
+SPEC_AGENT_PROMPT_UPDATE = """
+You are a survey specification expert.
+
+You will receive a survey specification and a set of changes. You should update the \
+survey specification to reflect the changes. You must make exactly the changes requested.
+
+Input format:
+{
+    "title": "string",
+    "description": "string",
+    "questions": [
+        {
+            "text": "string",
+            "type": "multiple_choice|text|rating|boolean",
+            "options": ["string"] (optional),
+            "required": boolean
+        }
+    ],
+    "target_audience": "string",
+    "targeted_completion_time": "string",
+    "targeted_number_of_responses": integer,
+    "hypothesis_tested": ["string", "string", ...] // List of hypotheses being tested
+    "changes": "string" // List of changes to be made
+}
 
 Please provide your response in JSON format with the following structure:
 {
@@ -71,12 +115,12 @@ class SpecAgent(Agent):
         pass
 
     def get_system_prompt(self) -> str:
-        return SPEC_AGENT_PROMPT
+        return SPEC_AGENT_PROMPT_CREATE
 
     async def arun(self, survey_request: str) -> Spec:
         """Asynchronous version of run."""
         messages = [
-            {"role": "system", "content": SPEC_AGENT_PROMPT},
+            {"role": "system", "content": SPEC_AGENT_PROMPT_CREATE},
             {
                 "role": "user",
                 "content": f"Please create a survey specification in JSON format for the following request:\n\n{survey_request}",
@@ -95,9 +139,11 @@ class SpecAgent(Agent):
             except Exception as e:
                 print(f"Attempt {attempt + 1} failed: {str(e)}")
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+                    await asyncio.sleep(
+                        retry_delay * (2**attempt)
+                    )  # Exponential backoff
                     continue
-                
+
                 # If all retries failed, return a user-friendly error
                 error_message = "We're having trouble generating your survey specification right now. "
                 if "Circuit breaker is open" in str(e):
@@ -112,7 +158,55 @@ class SpecAgent(Agent):
                     target_audience="Not available - please try again",
                     targeted_completion_time="Not available - please try again",
                     targeted_number_of_responses=0,
-                    hypothesis_tested=["Not available - please try again"]
+                    hypothesis_tested=["Not available - please try again"],
+                )
+                return Spec(data=error_spec)
+
+    async def aupdate(self, survey_spec: SurveySpec, changes: str) -> Spec:
+        """Asynchronous version of run."""
+        messages = [
+            {"role": "system", "content": SPEC_AGENT_PROMPT_CREATE},
+            {
+                "role": "user",
+                "content": f"""
+                {survey_spec.model_dump_json()}
+                {changes}
+                """,
+            },
+        ]
+
+        max_retries = 3
+        retry_delay = 1  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                spec_data = await self.get_structured_output(
+                    messages=messages, output_schema=SurveySpec
+                )
+                return Spec(data=spec_data)
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(
+                        retry_delay * (2**attempt)
+                    )  # Exponential backoff
+                    continue
+
+                # If all retries failed, return a user-friendly error
+                error_message = "We're having trouble generating your survey specification right now. "
+                if "Circuit breaker is open" in str(e):
+                    error_message += "Our AI service is temporarily unavailable. Please try again in a few minutes."
+                else:
+                    error_message += "Please try again or rephrase your request."
+
+                error_spec = SurveySpec(
+                    title="Survey Generation Temporarily Unavailable",
+                    description=error_message,
+                    questions=[],
+                    target_audience="Not available - please try again",
+                    targeted_completion_time="Not available - please try again",
+                    targeted_number_of_responses=0,
+                    hypothesis_tested=["Not available - please try again"],
                 )
                 return Spec(data=error_spec)
 

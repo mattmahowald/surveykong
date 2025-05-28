@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 
 // Define the expected SurveySpec type based on backend output
-interface Question {
-  text: string;
-  type: string;
-  options?: string[];
-  required: boolean;
-}
+// interface Question {
+//   text: string;
+//   type: string;
+//   options?: string[];
+//   required: boolean;
+// }
 
 interface SurveySpec {
   title: string;
@@ -72,7 +72,8 @@ function SurveyView({ spec }: { spec: SurveySpec }) {
         <br />
         <strong>Target Completion Time:</strong> {spec.targeted_completion_time}
         <br />
-        <strong>Target Number of Responses:</strong> {spec.targeted_number_of_responses}
+        <strong>Target Number of Responses:</strong>{" "}
+        {spec.targeted_number_of_responses}
         <br />
         <strong>Hypotheses Tested:</strong>
         <ul style={{ margin: "8px 0 0 20px", paddingLeft: 0 }}>
@@ -83,37 +84,6 @@ function SurveyView({ spec }: { spec: SurveySpec }) {
           ))}
         </ul>
       </div>
-      {/* <h3 style={{ marginBottom: 8, fontSize: isMobile ? 17 : 20 }}>
-        Questions
-      </h3>
-      <ol style={{ paddingLeft: isMobile ? 16 : 20 }}>
-        {spec.questions.map((q, i) => (
-          <li key={i} style={{ marginBottom: isMobile ? 12 : 18 }}>
-            <div style={{ fontWeight: 500, fontSize: isMobile ? 15 : 16 }}>
-              {q.text}
-            </div>
-            <div
-              style={{
-                fontSize: isMobile ? 13 : 14,
-                color: "#666",
-                marginBottom: 4,
-              }}
-            >
-              Type: {q.type.replace("_", " ")}
-              {q.required ? " (Required)" : ""}
-            </div>
-            {q.options && (
-              <ul style={{ margin: 0, paddingLeft: isMobile ? 12 : 18 }}>
-                {q.options.map((opt, j) => (
-                  <li key={j} style={{ fontSize: isMobile ? 13 : 14 }}>
-                    {opt}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
-      </ol> */}
     </div>
   );
 }
@@ -195,6 +165,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<WorkflowStep>("framing");
+  const [changes, setChanges] = useState("");
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const isMobile = useResponsive();
 
   // Reset state if user goes back to framing
@@ -220,7 +193,6 @@ function App() {
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data: SurveySpec = await res.json();
       setResult(data);
-      setCurrentStep("survey");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -232,59 +204,202 @@ function App() {
   let mainContent: React.ReactNode = null;
   if (currentStep === "framing") {
     mainContent = (
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          background: "#fff",
-          borderRadius: 12,
-          boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-          padding: isMobile ? 14 : 28,
-          marginBottom: isMobile ? 18 : 32,
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <label style={{ fontWeight: 500, fontSize: isMobile ? 15 : 18 }}>
-          Research Question:
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            rows={isMobile ? 3 : 4}
-            style={{
-              width: "100%",
-              marginTop: 8,
-              fontSize: isMobile ? 14 : 16,
-              borderRadius: 6,
-              border: "1px solid #d0d7de",
-              padding: isMobile ? 7 : 10,
-              resize: "vertical",
-              fontFamily: "inherit",
-              boxSizing: "border-box",
-            }}
-            required
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={loading}
+      <>
+        <form
+          onSubmit={handleSubmit}
           style={{
-            marginTop: isMobile ? 12 : 18,
-            padding: isMobile ? "8px 18px" : "10px 28px",
-            fontSize: isMobile ? 14 : 16,
-            borderRadius: 6,
-            border: "none",
-            background: "#1a2233",
-            color: "#fff",
-            fontWeight: 600,
-            cursor: loading ? "not-allowed" : "pointer",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            width: isMobile ? "100%" : undefined,
-            transition: "background 0.2s",
+            background: "#fff",
+            borderRadius: 12,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+            padding: isMobile ? 14 : 28,
+            marginBottom: isMobile ? 18 : 32,
+            width: "100%",
+            boxSizing: "border-box",
+            maxWidth: 700,
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
-          {loading ? "Generating..." : "Generate Survey Spec"}
-        </button>
-      </form>
+          <label style={{ fontWeight: 500, fontSize: isMobile ? 15 : 18 }}>
+            Research Question:
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              rows={isMobile ? 3 : 4}
+              style={{
+                width: "100%",
+                marginTop: 8,
+                fontSize: isMobile ? 14 : 16,
+                borderRadius: 6,
+                border: "1px solid #d0d7de",
+                padding: isMobile ? 7 : 10,
+                resize: "vertical",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
+              required
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              marginTop: isMobile ? 12 : 18,
+              padding: isMobile ? "8px 18px" : "10px 28px",
+              fontSize: isMobile ? 14 : 16,
+              borderRadius: 6,
+              border: "none",
+              background: "#1a2233",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: loading ? "not-allowed" : "pointer",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              width: isMobile ? "100%" : undefined,
+              transition: "background 0.2s",
+            }}
+          >
+            {loading ? "Generating..." : "Generate Survey Spec"}
+          </button>
+        </form>
+        {result && (
+          <div
+            style={{
+              maxWidth: 700,
+              marginLeft: "auto",
+              marginRight: "auto",
+              width: "100%",
+              marginBottom: 24,
+            }}
+          >
+            <SurveyView spec={result} />
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: 12,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                padding: isMobile ? 14 : 28,
+                marginTop: 24,
+                marginBottom: 32,
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <label
+                style={{
+                  fontWeight: 500,
+                  fontSize: isMobile ? 15 : 18,
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                Comments and Changes:
+                <textarea
+                  rows={isMobile ? 3 : 4}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    fontSize: isMobile ? 14 : 16,
+                    borderRadius: 6,
+                    border: "1px solid #d0d7de",
+                    padding: isMobile ? 7 : 10,
+                    resize: "vertical",
+                    fontFamily: "inherit",
+                    boxSizing: "border-box",
+                  }}
+                  placeholder="Suggest changes or leave comments..."
+                  value={changes}
+                  onChange={(e) => setChanges(e.target.value)}
+                />
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  justifyContent: isMobile ? "stretch" : "flex-end",
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    background: "#1a2233",
+                    color: "#fff",
+                    fontWeight: 600,
+                    border: "none",
+                    borderRadius: 6,
+                    padding: isMobile ? "8px 14px" : "10px 22px",
+                    fontSize: isMobile ? 14 : 16,
+                    cursor: updateLoading ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                    transition: "background 0.2s",
+                    opacity: updateLoading ? 0.7 : 1,
+                  }}
+                  onClick={async () => {
+                    if (!result || !changes.trim()) return;
+                    setUpdateLoading(true);
+                    setUpdateError(null);
+                    try {
+                      const res = await fetch(
+                        "http://localhost:8000/api/survey/update",
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            survey_spec: result,
+                            changes,
+                          }),
+                        }
+                      );
+                      if (!res.ok) throw new Error(`Error: ${res.status}`);
+                      const data: SurveySpec = await res.json();
+                      setResult(data);
+                      setChanges("");
+                    } catch (err: unknown) {
+                      setUpdateError(
+                        err instanceof Error ? err.message : "Unknown error"
+                      );
+                    } finally {
+                      setUpdateLoading(false);
+                    }
+                  }}
+                  disabled={updateLoading || !changes.trim()}
+                >
+                  {updateLoading ? "Updating..." : "Update"}
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: "#2e7d32",
+                    color: "#fff",
+                    fontWeight: 600,
+                    border: "none",
+                    borderRadius: 6,
+                    padding: isMobile ? "8px 14px" : "10px 22px",
+                    fontSize: isMobile ? 14 : 16,
+                    cursor: "pointer",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                    transition: "background 0.2s",
+                  }}
+                  onClick={() => setCurrentStep("survey")}
+                >
+                  Approve
+                </button>
+              </div>
+              {updateError && (
+                <div
+                  style={{
+                    color: "#b00020",
+                    marginTop: 10,
+                    fontWeight: 500,
+                    fontSize: isMobile ? 13 : 15,
+                  }}
+                >
+                  Error: {updateError}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>
     );
   } else if (currentStep === "survey") {
     mainContent = result ? <SurveyView spec={result} /> : null;
