@@ -21,9 +21,9 @@ and create detailed specifications that will guide the survey creation process. 
 You should consider:
     1. The purpose and goals of the survey
     2. Target audience and their characteristics
-    3. Appropriate question types and flow
-    4. Estimated completion time
-    5. Required number of responses
+    3. The essential hypotheses that the survey will need to test to meet the survey's goals
+    4. Target completion time for respondents
+    5. Target number of responses needed
 
 Provide clear, actionable specifications that can be used to create an effective survey.
 
@@ -40,8 +40,9 @@ Please provide your response in JSON format with the following structure:
         }
     ],
     "target_audience": "string",
-    "estimated_time": "string",
-    "required_responses": integer
+    "targeted_completion_time": "string",
+    "targeted_number_of_responses": integer,
+    "hypothesis_tested": ["string", "string", ...] // List of hypotheses being tested
 }
 """
 
@@ -82,22 +83,38 @@ class SpecAgent(Agent):
             },
         ]
 
-        try:
-            spec_data = await self.get_structured_output(
-                messages=messages, output_schema=SurveySpec
-            )
-            return Spec(data=spec_data)
-        except Exception as e:
-            print(f"Error generating specification: {str(e)}")
-            error_spec = SurveySpec(
-                title="Error in Specification Generation",
-                description=f"Failed to generate proper specification: {str(e)}",
-                questions=[],
-                target_audience="Unknown",
-                estimated_time="Unknown",
-                required_responses=0,
-            )
-            return Spec(data=error_spec)
+        max_retries = 3
+        retry_delay = 1  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                spec_data = await self.get_structured_output(
+                    messages=messages, output_schema=SurveySpec
+                )
+                return Spec(data=spec_data)
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+                    continue
+                
+                # If all retries failed, return a user-friendly error
+                error_message = "We're having trouble generating your survey specification right now. "
+                if "Circuit breaker is open" in str(e):
+                    error_message += "Our AI service is temporarily unavailable. Please try again in a few minutes."
+                else:
+                    error_message += "Please try again or rephrase your request."
+
+                error_spec = SurveySpec(
+                    title="Survey Generation Temporarily Unavailable",
+                    description=error_message,
+                    questions=[],
+                    target_audience="Not available - please try again",
+                    targeted_completion_time="Not available - please try again",
+                    targeted_number_of_responses=0,
+                    hypothesis_tested=["Not available - please try again"]
+                )
+                return Spec(data=error_spec)
 
     def run(self, survey_request: str) -> Spec:
         """Generate a survey specification based on the request."""

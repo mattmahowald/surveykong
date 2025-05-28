@@ -16,7 +16,8 @@ class SurveySpec(BaseModel):
 
     title: str
     description: str
-    questions: List[Question]
+    # questions: List[Question]
     target_audience: str
-    estimated_time: str
-    required_responses: int
+    targeted_completion_time: str
+    targeted_number_of_responses: int
+    hypothesis_tested: List[str]

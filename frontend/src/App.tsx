@@ -11,10 +11,10 @@ interface Question {
 interface SurveySpec {
   title: string;
   description: string;
-  questions: Question[];
   target_audience: string;
-  estimated_time: string;
-  required_responses: number;
+  targeted_completion_time: string;
+  targeted_number_of_responses: number;
+  hypothesis_tested: string[];
   [key: string]: unknown; // for any extra fields
 }
 
@@ -70,11 +70,20 @@ function SurveyView({ spec }: { spec: SurveySpec }) {
       <div style={{ margin: "16px 0", fontSize: isMobile ? 14 : 16 }}>
         <strong>Target Audience:</strong> {spec.target_audience}
         <br />
-        <strong>Estimated Time:</strong> {spec.estimated_time}
+        <strong>Target Completion Time:</strong> {spec.targeted_completion_time}
         <br />
-        <strong>Required Responses:</strong> {spec.required_responses}
+        <strong>Target Number of Responses:</strong> {spec.targeted_number_of_responses}
+        <br />
+        <strong>Hypotheses Tested:</strong>
+        <ul style={{ margin: "8px 0 0 20px", paddingLeft: 0 }}>
+          {spec.hypothesis_tested.map((hypothesis, index) => (
+            <li key={index} style={{ marginBottom: "4px" }}>
+              {hypothesis}
+            </li>
+          ))}
+        </ul>
       </div>
-      <h3 style={{ marginBottom: 8, fontSize: isMobile ? 17 : 20 }}>
+      {/* <h3 style={{ marginBottom: 8, fontSize: isMobile ? 17 : 20 }}>
         Questions
       </h3>
       <ol style={{ paddingLeft: isMobile ? 16 : 20 }}>
@@ -104,7 +113,7 @@ function SurveyView({ spec }: { spec: SurveySpec }) {
             )}
           </li>
         ))}
-      </ol>
+      </ol> */}
     </div>
   );
 }
